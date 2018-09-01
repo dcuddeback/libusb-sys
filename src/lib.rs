@@ -192,9 +192,13 @@ pub struct libusb_pollfd {
     pub events: c_short,
 }
 
+
+pub type libusb_hotplug_callback_handle = c_int;
+
 pub type libusb_transfer_cb_fn = extern "C" fn(*mut libusb_transfer);
 pub type libusb_pollfd_added_cb = extern "C" fn(c_int, c_short, *mut c_void);
 pub type libusb_pollfd_removed_cb = extern "C" fn(c_int, *mut c_void);
+pub type libusb_hotplug_callback_fn = extern "C" fn(*mut libusb_context, *const libusb_device, c_int, *mut c_void) -> c_int;
 
 // libusb_error
 pub const LIBUSB_SUCCESS:             c_int = 0;
@@ -347,7 +351,22 @@ pub const LIBUSB_REQUEST_SET_SEL:           u8 = 0x30;
 pub const LIBUSB_SET_ISOCH_DELAY:           u8 = 0x31;
 
 
+// libusb_hotplug_event
+pub const LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED: c_int = 0x01;
+pub const LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT:    c_int = 0x02;
+
+
+// libusb_hotplug_flag
+pub const LIBUSB_HOTPLUG_NO_FLAGS:  c_int = 0;
+pub const LIBUSB_HOTPLUG_ENUMERATE: c_int = 1;
+
+pub const LIBUSB_HOTPLUG_MATCH_ANY: c_int = -1;
+
+
 extern "C" {
+
+
+
     pub fn libusb_get_version() -> *const libusb_version;
     pub fn libusb_has_capability(capability: u32) -> c_int;
     pub fn libusb_error_name(errcode: c_int) -> *const c_char;
@@ -442,6 +461,9 @@ extern "C" {
     pub fn libusb_get_next_timeout(context: *mut libusb_context, tv: *mut timeval) -> c_int;
     pub fn libusb_get_pollfds(context: *mut libusb_context) -> *const *mut libusb_pollfd;
     pub fn libusb_set_pollfd_notifiers(context: *mut libusb_context, added_cb: libusb_pollfd_added_cb, removed_cb: libusb_pollfd_removed_cb, user_data: *mut c_void);
+
+    pub fn libusb_hotplug_register_callback(context: *mut libusb_context, events: c_int, flags: c_int, vendor_id: c_int, product_id: c_int, dev_class: c_int, cb_fn: libusb_hotplug_callback_fn, user_data: *mut c_void, callback_handle: *mut libusb_hotplug_callback_handle) -> c_int;
+    pub fn libusb_hotplug_deregister_callback(context: *mut libusb_context, callback_handle: libusb_hotplug_callback_handle);
 }
 
 
