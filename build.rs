@@ -19,7 +19,7 @@ fn try_conan() -> bool {
     let remote_list = conan::get_remote_list();
     let mut missing_remotes: Vec<conan::Remote> = vec![];
 
-    let bincrafters = conan::Remote {
+    let conan_center = conan::Remote {
         name: String::from("conan-center"),
         url: String::from("https://conan.bintray.com"),
     };
@@ -29,8 +29,8 @@ fn try_conan() -> bool {
         url: String::from("https://api.bintray.com/conan/conan/conan-transit"),
     };
 
-    if let None = remote_list.iter().find(|&remote| remote.url == bincrafters.url) {
-        missing_remotes.push(bincrafters);
+    if let None = remote_list.iter().find(|&remote| remote.url == conan_center.url) {
+        missing_remotes.push(conan_center);
     }
 
     if let None = remote_list.iter().find(|&remote| remote.url == conan_transit.url) {
