@@ -20,8 +20,8 @@ fn try_conan() -> bool {
     let mut missing_remotes: Vec<conan::Remote> = vec![];
 
     let bincrafters = conan::Remote {
-        name: String::from("bincrafters"),
-        url: String::from("https://api.bintray.com/conan/bincrafters/public-conan"),
+        name: String::from("conan-center"),
+        url: String::from("https://conan.bintray.com"),
     };
 
     let conan_transit = conan::Remote {
@@ -55,16 +55,6 @@ fn try_conan() -> bool {
     if let Some(build_info) = install_command.generate() {
         build_info.cargo_emit();
         return true;
-    } else {
-        let install_command = conan::InstallCommandBuilder::new()
-            .build_policy(conan::BuildPolicy::Always)
-            .recipe_path(path::Path::new("conanfile.txt"))
-            .build();
-
-        if let Some(build_info) = install_command.generate() {
-            build_info.cargo_emit();
-            return true;
-        }
     }
 
     false
