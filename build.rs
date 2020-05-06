@@ -55,6 +55,16 @@ fn try_conan() -> bool {
     if let Some(build_info) = install_command.generate() {
         build_info.cargo_emit();
         return true;
+    } else {
+        let install_command = conan::InstallCommandBuilder::new()
+            .build_policy(conan::BuildPolicy::Always)
+            .recipe_path(path::Path::new("conanfile.txt"))
+            .build();
+
+        if let Some(build_info) = install_command.generate() {
+            build_info.cargo_emit();
+            return true;
+        }
     }
 
     false
