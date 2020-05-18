@@ -20,5 +20,5 @@ libc = "0.2"
 pkg-config = "0.3.2"
 conan = "0.1.3"
 
-[replace]
-"conan:0.1.3"= { git = "https://github.com/Devolutions/conan-rs" }
+[patch.crates-io]
+conan = { git = "https://github.com/Devolutions/conan-rs" }
