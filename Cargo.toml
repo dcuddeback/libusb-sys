@@ -18,7 +18,4 @@ libc = "0.2"
 
 [build-dependencies]
 pkg-config = "0.3.2"
-conan = "0.1.3"
-
-[patch.crates-io]
-conan = { git = "https://github.com/Devolutions/conan-rs" }
+conan = "0.2.0"
