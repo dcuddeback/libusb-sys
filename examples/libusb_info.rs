@@ -3,6 +3,7 @@ extern crate libusb_sys as ffi;
 use std::mem;
 use std::str;
 use std::ffi::CStr;
+use std::mem::MaybeUninit;
 
 fn main() {
   print_version();
@@ -21,14 +22,15 @@ fn print_version() {
 }
 
 fn print_capabilities() {
-  let mut context: *mut ::ffi::libusb_context = unsafe { mem::uninitialized() };
+  let mut context_uninit: MaybeUninit::<*mut ::ffi::libusb_context> = MaybeUninit::uninit();
 
   // library must be initialized before calling libusb_has_capabililty()
-  match unsafe { ::ffi::libusb_init(&mut context) } {
+  match unsafe { ::ffi::libusb_init(context_uninit.as_mut_ptr()) } {
     0 => (),
     e => panic!("libusb_init: {}", e)
   };
 
+  let context = unsafe { context_uninit.assume_init() };
   unsafe {
     ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_DEBUG);
     ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_INFO);
