@@ -6,7 +6,7 @@ use libc::{c_int,c_uchar};
 use std::{mem::{MaybeUninit}, slice, ptr};
 
 fn main() {
-  let mut context_uninit: MaybeUninit::<*mut ::ffi::libusb_context> = MaybeUninit::uninit();
+  let mut context_uninit: MaybeUninit<*mut ::ffi::libusb_context> = MaybeUninit::uninit();
 
   match unsafe { ::ffi::libusb_init(context_uninit.as_mut_ptr()) } {
     0 => (),
@@ -19,7 +19,7 @@ fn main() {
 }
 
 fn list_devices(context: *mut ::ffi::libusb_context) {
-  let mut device_list_uninit: MaybeUninit::<*const *mut ffi::libusb_device> = MaybeUninit::uninit();
+  let mut device_list_uninit: MaybeUninit<*const *mut ffi::libusb_device> = MaybeUninit::uninit();
 
   let get_device_list_result = unsafe { ::ffi::libusb_get_device_list(context, device_list_uninit.as_mut_ptr()) };
 
@@ -38,7 +38,7 @@ fn list_devices(context: *mut ::ffi::libusb_context) {
 }
 
 fn display_device(dev: &*mut ::ffi::libusb_device) {
-  let mut descriptor_uninit: MaybeUninit::<::ffi::libusb_device_descriptor> = MaybeUninit::uninit();
+  let mut descriptor_uninit: MaybeUninit<::ffi::libusb_device_descriptor> = MaybeUninit::uninit();
   let mut handle: *mut ::ffi::libusb_device_handle = ptr::null_mut();
 
   let bus = unsafe { ::ffi::libusb_get_bus_number(*dev) };
@@ -92,7 +92,7 @@ fn display_device(dev: &*mut ::ffi::libusb_device) {
     print_device_descriptor(handle, &descriptor);
 
     for i in 0..descriptor.bNumConfigurations {
-      let mut descriptor_uninit: MaybeUninit::<*const ::ffi::libusb_config_descriptor> = MaybeUninit::uninit();
+      let mut descriptor_uninit: MaybeUninit<*const ::ffi::libusb_config_descriptor> = MaybeUninit::uninit();
 
       match unsafe { ::ffi::libusb_get_config_descriptor(*dev, i, descriptor_uninit.as_mut_ptr()) } {
         0 => {

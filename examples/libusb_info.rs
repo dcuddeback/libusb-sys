@@ -22,7 +22,7 @@ fn print_version() {
 }
 
 fn print_capabilities() {
-  let mut context_uninit: MaybeUninit::<*mut ::ffi::libusb_context> = MaybeUninit::uninit();
+  let mut context_uninit: MaybeUninit<*mut ::ffi::libusb_context> = MaybeUninit::uninit();
 
   // library must be initialized before calling libusb_has_capabililty()
   match unsafe { ::ffi::libusb_init(context_uninit.as_mut_ptr()) } {
