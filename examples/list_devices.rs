@@ -3,7 +3,6 @@ extern crate libc;
 
 use libc::{c_int,c_uchar};
 
-use std::mem;
 use std::{mem::{MaybeUninit}, slice, ptr};
 
 fn main() {
@@ -62,7 +61,7 @@ fn display_device(dev: &*mut ::ffi::libusb_device) {
     print!(" ID {:04x}:{:04x}", descriptor.idVendor, descriptor.idProduct);
   }
 
-  print!(" {}", get_device_speed(speed));
+  print!(", Speed : {}", get_device_speed(speed));
 
   if has_descriptor {
     if descriptor.iManufacturer > 0 {
@@ -223,6 +222,7 @@ fn get_error(err: c_int) -> &'static str {
 
 fn get_device_speed(speed: c_int) -> &'static str {
   match speed {
+    ::ffi::LIBUSB_SPEED_SUPER_PLUS  => "10000 Mbps",
     ::ffi::LIBUSB_SPEED_SUPER       => "5000 Mbps",
     ::ffi::LIBUSB_SPEED_HIGH        => " 480 Mbps",
     ::ffi::LIBUSB_SPEED_FULL        => "  12 Mbps",
