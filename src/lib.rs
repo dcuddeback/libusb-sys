@@ -537,6 +537,7 @@ pub unsafe fn libusb_control_transfer_get_data(transfer: *mut libusb_transfer) -
     (*transfer).buffer.offset(LIBUSB_CONTROL_SETUP_SIZE as isize)
 }
 
+#[allow(non_snake_case)]
 /// Helper function to populate the setup packet (first 8 bytes of the data
 /// buffer) for a control transfer. The wIndex, wValue and wLength values should
 /// be given in host-endian byte order.
@@ -586,7 +587,7 @@ pub unsafe fn libusb_fill_control_transfer(transfer: *mut libusb_transfer,
     (*transfer).buffer = buffer;
     let ptr = setup as *const usize;
     if !ptr.is_null()  {
-        let size_of_result = libusb_cpu_to_le16((*setup).wLength);
+        // let size_of_result = libusb_cpu_to_le16((*setup).wLength);
         (*transfer).length = (LIBUSB_CONTROL_SETUP_SIZE + std::mem::size_of::<u16>()).try_into().unwrap();
     }
     (*transfer).user_data = user_data;
@@ -702,10 +703,7 @@ pub unsafe fn libusb_fill_iso_transfer(transfer: *mut libusb_transfer,
 
 pub unsafe fn libusb_set_iso_packet_lengths(transfer: *mut libusb_transfer,
                                             length: c_uint) {
-    // int i;
-    // for (i = 0; i < (*transfer).num_iso_packets; i++) {
-    //     (*transfer).so_packet_desc[i].length = length;
-    // }
-    // for (*transfer).so_packet_desc[] =
-    unimplemented!()
+    for one_descriptor in (*transfer).iso_packet_desc.iter_mut() {
+        one_descriptor.length = length;
+    }
 }
