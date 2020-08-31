@@ -3,11 +3,11 @@ extern crate libc;
 
 use libc::{c_int,c_uint,c_uchar};
 
-use std::mem;
 use std::slice;
 
 use std::io::{Read,Cursor};
 use std::str::FromStr;
+use std::mem::MaybeUninit;
 
 #[derive(Debug)]
 struct Endpoint {
@@ -28,11 +28,17 @@ fn main() {
   let vid: u16 = FromStr::from_str(args[1].as_ref()).unwrap();
   let pid: u16 = FromStr::from_str(args[2].as_ref()).unwrap();
 
-  let mut context: *mut ::ffi::libusb_context = unsafe { mem::uninitialized() };
-  let mut device_list: *const *mut ::ffi::libusb_device = unsafe { mem::uninitialized() };
+  let mut context_uninit: MaybeUninit<*mut ffi::libusb_context> = MaybeUninit::uninit();
+  let context: *mut ffi::libusb_context;
 
-  match unsafe { ::ffi::libusb_init(&mut context) } {
-    0 => (),
+  // let mut device_list: *const *mut ::ffi::libusb_device = unsafe { mem::uninitialized() };
+  let mut device_list_uninit: MaybeUninit<*const *mut ffi::libusb_device> = MaybeUninit::uninit();
+  let device_list: *const *mut ffi::libusb_device;
+
+  match unsafe { ::ffi::libusb_init(context_uninit.as_mut_ptr()) } {
+    0 => {
+      context = unsafe { context_uninit.assume_init() }
+    },
     e => panic!("libusb_init: {}", e)
   };
 
@@ -46,19 +52,22 @@ fn main() {
         let device = unsafe { ::ffi::libusb_get_device(handle) };
         unsafe { ::ffi::libusb_ref_device(device) };
 
-        if unsafe { ::ffi::libusb_get_device_list(context, &mut device_list) } >= 0 {
+        if unsafe { ::ffi::libusb_get_device_list(context, device_list_uninit.as_mut_ptr()) } >= 0 {
+          device_list = unsafe { device_list_uninit.assume_init() };
           print_device_tree(device);
           println!("");
-
           unsafe { ::ffi::libusb_free_device_list(device_list, 1) };
         }
 
         let languages = get_language_ids(handle);
         println!("Supported languages: {:?}", languages);
 
-        let mut active_config: c_int = unsafe { mem::uninitialized() };
-        match unsafe { ::ffi::libusb_get_configuration(handle, &mut active_config) } {
-          0 => println!("Active configuration: {}", active_config),
+        let mut active_config_uninit = MaybeUninit::<c_int>::zeroed();
+        match unsafe { ::ffi::libusb_get_configuration(handle, active_config_uninit.as_mut_ptr()) } {
+          0 =>  {
+            let active_config = unsafe { active_config_uninit.assume_init() };
+            println!("Active configuration: {}", active_config)
+          },
           e => println!("libusb_get_configuration: {}", e)
         }
         println!("");
@@ -149,17 +158,21 @@ fn get_language_ids(handle: *mut ::ffi::libusb_device_handle) -> Vec<u16> {
 }
 
 fn find_readable_endpoint(device: *mut ::ffi::libusb_device, transfer_type: u8) -> Option<Endpoint> {
-  let mut device_descriptor: ::ffi::libusb_device_descriptor = unsafe { mem::uninitialized() };
+  let mut descriptor_uninit: MaybeUninit<ffi::libusb_device_descriptor> = MaybeUninit::uninit();
 
-  match unsafe { ::ffi::libusb_get_device_descriptor(device, &mut device_descriptor) } {
+  match unsafe { ::ffi::libusb_get_device_descriptor(device, descriptor_uninit.as_mut_ptr()) } {
     0 => {
-      for i in 0..device_descriptor.bNumConfigurations {
-        let mut config_ptr: *const ::ffi::libusb_config_descriptor = unsafe { mem::uninitialized() };
+      let device_descriptor: ffi::libusb_device_descriptor = unsafe { descriptor_uninit.assume_init() };
 
-        match unsafe { ::ffi::libusb_get_config_descriptor(device, i, &mut config_ptr) } {
+      for i in 0..device_descriptor.bNumConfigurations {
+        let configuration_config_ptr_uninit: MaybeUninit<*mut *const ffi::libusb_config_descriptor> = MaybeUninit::uninit();
+
+        match unsafe { ::ffi::libusb_get_config_descriptor(device, i, *configuration_config_ptr_uninit.as_ptr()) } {
           0 => {
-            let config_descriptor = unsafe { &*config_ptr };
-            let interfaces = unsafe { slice::from_raw_parts(config_descriptor.interface, config_descriptor.bNumInterfaces as usize) };
+            let config_descriptor: *mut *const ffi::libusb_config_descriptor = unsafe { configuration_config_ptr_uninit.assume_init() };
+
+            let interfaces = unsafe { slice::from_raw_parts((*(*config_descriptor)).interface,
+                                                            (*(*config_descriptor)).bNumInterfaces as usize) };
 
             for iface in interfaces {
               let settings = unsafe { slice::from_raw_parts(iface.altsetting, iface.num_altsetting as usize) };
@@ -173,7 +186,7 @@ fn find_readable_endpoint(device: *mut ::ffi::libusb_device, transfer_type: u8) 
 
                   if is_input && matches_type {
                     return Some(Endpoint {
-                      config: config_descriptor.bConfigurationValue,
+                      config: unsafe { (*(*config_descriptor)).bConfigurationValue },
                       iface: iface_descriptor.bInterfaceNumber,
                       setting: iface_descriptor.bAlternateSetting,
                       address: endpoint_descriptor.bEndpointAddress
@@ -197,7 +210,7 @@ fn find_readable_endpoint(device: *mut ::ffi::libusb_device, transfer_type: u8) 
 }
 
 fn read_endpoint(handle: *mut ::ffi::libusb_device_handle, device: *mut ::ffi::libusb_device, endpoint: Endpoint, transfer_type: u8) {
-  println!("Reading from endpoint: {:?}", endpoint);
+  println!("Reading from the endpoint: {:?}", endpoint);
 
   let has_kernel_driver = unsafe {
     if ::ffi::libusb_kernel_driver_active(handle, endpoint.iface as c_int) == 1 {
@@ -222,17 +235,26 @@ fn read_endpoint(handle: *mut ::ffi::libusb_device_handle, device: *mut ::ffi::l
 
       match unsafe { ::ffi::libusb_claim_interface(handle, endpoint.iface as c_int) } {
         0 => {
-          match unsafe { ::ffi::libusb_set_interface_alt_setting(handle, endpoint.iface as c_int, endpoint.setting as c_int) } {
+          match unsafe { ::ffi::libusb_set_interface_alt_setting(handle,
+                                                                 endpoint.iface as c_int,
+                                                                 endpoint.setting as c_int) } {
             0 => {
               let mut vec = Vec::<u8>::with_capacity(256);
               let timeout: c_uint = 1000;
 
-              let mut transferred: c_int = unsafe { mem::uninitialized() };
+              let mut transferred_uninit = MaybeUninit::<c_int>::zeroed();
+              let transferred: c_int;
 
               match transfer_type {
                 ::ffi::LIBUSB_TRANSFER_TYPE_INTERRUPT => {
-                  match unsafe { ::ffi::libusb_interrupt_transfer(handle, endpoint.address as c_uchar, (&vec[..]).as_ptr() as *mut c_uchar, vec.capacity() as c_int, &mut transferred, timeout) } {
+                  match unsafe { ::ffi::libusb_interrupt_transfer(handle,
+                                                                  endpoint.address as c_uchar,
+                                                                  (&vec[..]).as_ptr() as *mut c_uchar,
+                                                                  vec.capacity() as c_int,
+                                                                  transferred_uninit.as_mut_ptr(),
+                                                                  timeout) } {
                     0 => {
+                      transferred = unsafe { transferred_uninit.assume_init() };
                       unsafe { vec.set_len(transferred as usize) };
                       println!(" - read: {:?}", vec);
                     },
@@ -240,8 +262,14 @@ fn read_endpoint(handle: *mut ::ffi::libusb_device_handle, device: *mut ::ffi::l
                   }
                 },
                 ::ffi::LIBUSB_TRANSFER_TYPE_BULK => {
-                  match unsafe { ::ffi::libusb_bulk_transfer(handle, endpoint.address as c_uchar, (&vec[..]).as_ptr() as *mut c_uchar, vec.capacity() as c_int, &mut transferred, timeout) } {
+                  match unsafe { ::ffi::libusb_bulk_transfer(handle,
+                                                             endpoint.address as c_uchar,
+                                                             (&vec[..]).as_ptr() as *mut c_uchar,
+                                                             vec.capacity() as c_int,
+                                                             transferred_uninit.as_mut_ptr(),
+                                                             timeout) } {
                     0 => {
+                      transferred = unsafe { transferred_uninit.assume_init() };
                       unsafe { vec.set_len(transferred as usize) };
                       println!(" - read: {:?}", vec);
                     },
@@ -251,7 +279,7 @@ fn read_endpoint(handle: *mut ::ffi::libusb_device_handle, device: *mut ::ffi::l
                 tt => println!(" - can't read endpoint with transfer type {}", tt)
               }
             },
-            e => println!("libusb_set_interface_alt_setting: {}", e)
+            e => println!("libusb_set_interface_alt_setting: {}", e),
           }
 
           match unsafe { ::ffi::libusb_release_interface(handle, endpoint.iface as c_int) } {
