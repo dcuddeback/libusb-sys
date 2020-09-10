@@ -50,10 +50,10 @@ fn display_device(dev: &*mut ::ffi::libusb_device) {
     _ => false
   };
   let descriptor = unsafe { descriptor_uninit.assume_init() };
-  if unsafe { ::ffi::libusb_open(*dev, &mut handle) } < 0 {
+/*  if unsafe { ::ffi::libusb_open(*dev, &mut handle) } < 0 {
     println!("Couldn't open device, some information will be missing");
     handle = ptr::null_mut();
-  }
+  }*/
 
   print!("Bus {:03} Device {:03}", bus, address);
 
