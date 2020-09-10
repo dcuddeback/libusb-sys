@@ -20,8 +20,8 @@ struct Endpoint {
 fn main() {
   let args: Vec<String> = std::env::args().collect();
 
-  if args.len() < 3 {
-    println!("usage: show_device <vendor-id> <product-id>");
+  if args.len() < 2 {
+    println!("usage: <vendor-id> <product-id>");
     return;
   }
 
