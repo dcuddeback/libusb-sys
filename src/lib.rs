@@ -185,6 +185,18 @@ pub struct libusb_transfer {
     pub iso_packet_desc: [libusb_iso_packet_descriptor; 0],
 }
 
+#[allow(non_snake_case)]
+#[repr(C)]
+pub struct libusb_control_setup {
+    bmRequestType: u8,
+    bRequest: u8,
+    wValue: u16,
+    wIndex: u16,
+    wLength: u16,
+}
+
+pub const LIBUSB_CONTROL_SETUP_SIZE: usize = std::mem::size_of::<libusb_control_setup>();
+
 #[repr(C)]
 pub struct libusb_pollfd {
     pub fd: c_int,
