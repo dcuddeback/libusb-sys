@@ -553,6 +553,22 @@ extern "C" {
         removed_cb: libusb_pollfd_removed_cb,
         user_data: *mut c_void,
     );
+
+    pub fn libusb_fill_control_setup(
+        buffer: *mut c_uchar,
+        bm_request_type: u8,
+        b_request: u8,
+        w_value: u16,
+        w_index: u16,
+        w_length: u16,
+    );
+    pub fn libusb_fill_control_transfer(
+        transfer_handle: *mut libusb_transfer,
+        dev_handle: *mut libusb_device_handle,
+        buffer: *mut c_uchar,
+        callback: libusb_transfer_cb_fn,
+        user_data: *mut c_void,
+    );
 }
 
 // defined as static inline in libusb.h
