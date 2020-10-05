@@ -444,7 +444,6 @@ extern "C" {
         buffer: *mut c_uchar,
         callback: libusb_transfer_cb_fn,
         user_data: *mut c_void,
-        timeout: u32,
     );
 }
 
