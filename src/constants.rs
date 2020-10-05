@@ -138,3 +138,6 @@ pub const LIBUSB_REQUEST_SET_INTERFACE: u8 = 0x0B;
 pub const LIBUSB_REQUEST_SYNCH_FRAME: u8 = 0x0C;
 pub const LIBUSB_REQUEST_SET_SEL: u8 = 0x30;
 pub const LIBUSB_SET_ISOCH_DELAY: u8 = 0x31;
+
+use crate::libusb_control_setup;
+pub const LIBUSB_CONTROL_SETUP_SIZE: usize = std::mem::size_of::<libusb_control_setup>();

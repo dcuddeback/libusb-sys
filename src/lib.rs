@@ -198,8 +198,6 @@ pub struct libusb_control_setup {
     wLength: u16,
 }
 
-pub const LIBUSB_CONTROL_SETUP_SIZE: usize = std::mem::size_of::<libusb_control_setup>();
-
 #[repr(C)]
 pub struct libusb_pollfd {
     pub fd: c_int,
