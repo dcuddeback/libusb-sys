@@ -219,10 +219,7 @@ extern "C" {
     pub fn libusb_exit(context: *mut libusb_context);
     pub fn libusb_set_debug(context: *mut libusb_context, level: c_int);
 
-    pub fn libusb_get_device_list(
-        context: *mut libusb_context,
-        list: *mut *const *mut libusb_device,
-    ) -> ssize_t;
+    pub fn libusb_get_device_list(context: *mut libusb_context, list: *mut *const *mut libusb_device) -> ssize_t;
     pub fn libusb_free_device_list(list: *const *mut libusb_device, unref_devices: c_int);
     pub fn libusb_get_parent(dev: *mut libusb_device) -> *mut libusb_device;
     pub fn libusb_get_device(dev_handle: *mut libusb_device_handle) -> *mut libusb_device;
@@ -230,33 +227,15 @@ extern "C" {
     pub fn libusb_ref_device(dev: *mut libusb_device) -> *mut libusb_device;
     pub fn libusb_unref_device(dev: *mut libusb_device);
 
-    pub fn libusb_get_device_descriptor(
-        dev: *const libusb_device,
-        desc: *mut libusb_device_descriptor,
-    ) -> c_int;
-    pub fn libusb_get_config_descriptor(
-        dev: *const libusb_device,
-        index: u8,
-        config: *mut *const libusb_config_descriptor,
-    ) -> c_int;
-    pub fn libusb_get_active_config_descriptor(
-        dev: *const libusb_device,
-        config: *mut *const libusb_config_descriptor,
-    ) -> c_int;
-    pub fn libusb_get_config_descriptor_by_value(
-        dev: *const libusb_device,
-        bConfigurationValue: u8,
-        config: *mut *const libusb_config_descriptor,
-    ) -> c_int;
+    pub fn libusb_get_device_descriptor(dev: *const libusb_device, desc: *mut libusb_device_descriptor) -> c_int;
+    pub fn libusb_get_config_descriptor(dev: *const libusb_device, index: u8, config: *mut *const libusb_config_descriptor) -> c_int;
+    pub fn libusb_get_active_config_descriptor(dev: *const libusb_device, config: *mut *const libusb_config_descriptor) -> c_int;
+    pub fn libusb_get_config_descriptor_by_value(dev: *const libusb_device, bConfigurationValue: u8, config: *mut *const libusb_config_descriptor) -> c_int;
     pub fn libusb_free_config_descriptor(config: *const libusb_config_descriptor);
 
     pub fn libusb_get_bus_number(dev: *const libusb_device) -> u8;
     pub fn libusb_get_port_number(dev: *mut libusb_device) -> u8;
-    pub fn libusb_get_port_numbers(
-        dev: *mut libusb_device,
-        port_numbers: *mut u8,
-        port_numbers_len: c_int,
-    ) -> c_int;
+    pub fn libusb_get_port_numbers(dev: *mut libusb_device, port_numbers: *mut u8, port_numbers_len: c_int) -> c_int;
     pub fn libusb_get_device_address(dev: *const libusb_device) -> u8;
     pub fn libusb_get_device_speed(dev: *const libusb_device) -> c_int;
     pub fn libusb_get_max_packet_size(dev: *const libusb_device, endpoint: c_uchar) -> c_int;
@@ -264,130 +243,39 @@ extern "C" {
 
     pub fn libusb_open(dev: *const libusb_device, handle: *mut *mut libusb_device_handle) -> c_int;
     pub fn libusb_close(dev_handle: *mut libusb_device_handle);
-    pub fn libusb_open_device_with_vid_pid(
-        context: *mut libusb_context,
-        vendor_id: u16,
-        product_id: u16,
-    ) -> *mut libusb_device_handle;
+    pub fn libusb_open_device_with_vid_pid(context: *mut libusb_context, vendor_id: u16, product_id: u16) -> *mut libusb_device_handle;
     pub fn libusb_reset_device(dev_handle: *mut libusb_device_handle) -> c_int;
     pub fn libusb_clear_halt(dev_handle: *mut libusb_device_handle, endpoint: c_uchar) -> c_int;
-    pub fn libusb_alloc_streams(
-        dev_handle: *mut libusb_device_handle,
-        num_streams: u32,
-        endpoints: *mut c_uchar,
-        num_endpoints: c_int,
-    ) -> c_int;
-    pub fn libusb_free_streams(
-        dev_handle: *mut libusb_device_handle,
-        endpoints: *mut c_uchar,
-        num_endpoints: c_int,
-    ) -> c_int;
-    pub fn libusb_get_string_descriptor_ascii(
-        dev_handle: *mut libusb_device_handle,
-        desc_index: u8,
-        data: *mut c_uchar,
-        length: c_int,
-    ) -> c_int;
+    pub fn libusb_alloc_streams(dev_handle: *mut libusb_device_handle, num_streams: u32, endpoints: *mut c_uchar, num_endpoints: c_int) -> c_int;
+    pub fn libusb_free_streams(dev_handle: *mut libusb_device_handle, endpoints: *mut c_uchar, num_endpoints: c_int) -> c_int;
+    pub fn libusb_get_string_descriptor_ascii(dev_handle: *mut libusb_device_handle, desc_index: u8, data: *mut c_uchar, length: c_int) -> c_int;
 
-    pub fn libusb_get_configuration(
-        dev_handle: *mut libusb_device_handle,
-        config: *mut c_int,
-    ) -> c_int;
+    pub fn libusb_get_configuration(dev_handle: *mut libusb_device_handle, config: *mut c_int) -> c_int;
     pub fn libusb_set_configuration(dev_handle: *mut libusb_device_handle, config: c_int) -> c_int;
 
-    pub fn libusb_get_ss_endpoint_companion_descriptor(
-        context: *mut libusb_context,
-        endpoint: *const libusb_endpoint_descriptor,
-        ep_comp: *mut *const libusb_ss_endpoint_companion_descriptor,
-    ) -> c_int;
-    pub fn libusb_free_ss_endpoint_companion_descriptor(
-        ep_comp: *mut libusb_ss_endpoint_companion_descriptor,
-    );
-    pub fn libusb_get_bos_descriptor(
-        dev_handle: *mut libusb_device_handle,
-        bos: *mut *const libusb_bos_descriptor,
-    ) -> c_int;
+    pub fn libusb_get_ss_endpoint_companion_descriptor(context: *mut libusb_context, endpoint: *const libusb_endpoint_descriptor, ep_comp: *mut *const libusb_ss_endpoint_companion_descriptor) -> c_int;
+    pub fn libusb_free_ss_endpoint_companion_descriptor(ep_comp: *mut libusb_ss_endpoint_companion_descriptor);
+    pub fn libusb_get_bos_descriptor(dev_handle: *mut libusb_device_handle, bos: *mut *const libusb_bos_descriptor) -> c_int;
     pub fn libusb_free_bos_descriptor(bos: *mut libusb_bos_descriptor);
-    pub fn libusb_get_usb_2_0_extension_descriptor(
-        context: *mut libusb_context,
-        dev_cap: *mut libusb_bos_dev_capability_descriptor,
-        usb_2_0_extension: *mut *const libusb_usb_2_0_extension_descriptor,
-    ) -> c_int;
-    pub fn libusb_free_usb_2_0_extension_descriptor(
-        usb_2_0_extension: *mut libusb_usb_2_0_extension_descriptor,
-    );
-    pub fn libusb_get_ss_usb_device_capability_descriptor(
-        context: *mut libusb_context,
-        dev_cap: *mut libusb_bos_dev_capability_descriptor,
-        ss_usb_device_cap: *mut *const libusb_ss_usb_device_capability_descriptor,
-    ) -> c_int;
-    pub fn libusb_free_ss_usb_device_capability_descriptor(
-        ss_usb_device_cap: *mut libusb_ss_usb_device_capability_descriptor,
-    );
-    pub fn libusb_get_container_id_descriptor(
-        context: *mut libusb_context,
-        dev_cap: *mut libusb_bos_dev_capability_descriptor,
-        container_id: *mut *const libusb_container_id_descriptor,
-    ) -> c_int;
+    pub fn libusb_get_usb_2_0_extension_descriptor(context: *mut libusb_context, dev_cap: *mut libusb_bos_dev_capability_descriptor, usb_2_0_extension: *mut *const libusb_usb_2_0_extension_descriptor) -> c_int;
+    pub fn libusb_free_usb_2_0_extension_descriptor(usb_2_0_extension: *mut libusb_usb_2_0_extension_descriptor);
+    pub fn libusb_get_ss_usb_device_capability_descriptor(context: *mut libusb_context, dev_cap: *mut libusb_bos_dev_capability_descriptor, ss_usb_device_cap: *mut *const libusb_ss_usb_device_capability_descriptor) -> c_int;
+    pub fn libusb_free_ss_usb_device_capability_descriptor(ss_usb_device_cap: *mut libusb_ss_usb_device_capability_descriptor);
+    pub fn libusb_get_container_id_descriptor(context: *mut libusb_context, dev_cap: *mut libusb_bos_dev_capability_descriptor, container_id: *mut *const libusb_container_id_descriptor) -> c_int;
     pub fn libusb_free_container_id_descriptor(container_id: *mut libusb_container_id_descriptor);
 
-    pub fn libusb_set_auto_detach_kernel_driver(
-        dev_handle: *mut libusb_device_handle,
-        enable: c_int,
-    ) -> c_int;
-    pub fn libusb_kernel_driver_active(
-        dev_handle: *mut libusb_device_handle,
-        interface_number: c_int,
-    ) -> c_int;
-    pub fn libusb_detach_kernel_driver(
-        dev_handle: *mut libusb_device_handle,
-        interface_number: c_int,
-    ) -> c_int;
-    pub fn libusb_attach_kernel_driver(
-        dev_handle: *mut libusb_device_handle,
-        interface_number: c_int,
-    ) -> c_int;
+    pub fn libusb_set_auto_detach_kernel_driver(dev_handle: *mut libusb_device_handle, enable: c_int) -> c_int;
+    pub fn libusb_kernel_driver_active(dev_handle: *mut libusb_device_handle, interface_number: c_int) -> c_int;
+    pub fn libusb_detach_kernel_driver(dev_handle: *mut libusb_device_handle, interface_number: c_int) -> c_int;
+    pub fn libusb_attach_kernel_driver(dev_handle: *mut libusb_device_handle, interface_number: c_int) -> c_int;
 
-    pub fn libusb_claim_interface(
-        dev_handle: *mut libusb_device_handle,
-        interface_number: c_int,
-    ) -> c_int;
-    pub fn libusb_release_interface(
-        dev_handle: *mut libusb_device_handle,
-        interface_number: c_int,
-    ) -> c_int;
-    pub fn libusb_set_interface_alt_setting(
-        dev_handle: *mut libusb_device_handle,
-        interface_number: c_int,
-        alternate_setting: c_int,
-    ) -> c_int;
+    pub fn libusb_claim_interface(dev_handle: *mut libusb_device_handle, interface_number: c_int) -> c_int;
+    pub fn libusb_release_interface(dev_handle: *mut libusb_device_handle, interface_number: c_int) -> c_int;
+    pub fn libusb_set_interface_alt_setting(dev_handle: *mut libusb_device_handle, interface_number: c_int, alternate_setting: c_int) -> c_int;
 
-    pub fn libusb_interrupt_transfer(
-        dev_handle: *mut libusb_device_handle,
-        endpoint: c_uchar,
-        data: *mut c_uchar,
-        length: c_int,
-        transferred: *mut c_int,
-        timeout: c_uint,
-    ) -> c_int;
-    pub fn libusb_bulk_transfer(
-        dev_handle: *mut libusb_device_handle,
-        endpoint: c_uchar,
-        data: *mut c_uchar,
-        length: c_int,
-        transferred: *mut c_int,
-        timeout: c_uint,
-    ) -> c_int;
-    pub fn libusb_control_transfer(
-        dev_handle: *mut libusb_device_handle,
-        request_type: u8,
-        request: u8,
-        value: u16,
-        index: u16,
-        data: *mut c_uchar,
-        length: u16,
-        timeout: c_uint,
-    ) -> c_int;
+    pub fn libusb_interrupt_transfer(dev_handle: *mut libusb_device_handle, endpoint: c_uchar, data: *mut c_uchar, length: c_int, transferred: *mut c_int, timeout: c_uint) -> c_int;
+    pub fn libusb_bulk_transfer(dev_handle: *mut libusb_device_handle, endpoint: c_uchar, data: *mut c_uchar, length: c_int, transferred: *mut c_int, timeout: c_uint) -> c_int;
+    pub fn libusb_control_transfer(dev_handle: *mut libusb_device_handle, request_type: u8, request: u8, value: u16, index: u16, data: *mut c_uchar, length: u16, timeout: c_uint) -> c_int;
 
     pub fn libusb_alloc_transfer(iso_packets: c_int) -> *mut libusb_transfer;
     pub fn libusb_submit_transfer(transfer: *mut libusb_transfer) -> c_int;
@@ -398,15 +286,8 @@ extern "C" {
 
     pub fn libusb_handle_events(context: *mut libusb_context) -> c_int;
     pub fn libusb_handle_events_timeout(context: *mut libusb_context, tv: *const timeval) -> c_int;
-    pub fn libusb_handle_events_completed(
-        context: *mut libusb_context,
-        completed: *mut c_int,
-    ) -> c_int;
-    pub fn libusb_handle_events_timeout_completed(
-        context: *mut libusb_context,
-        tv: *const timeval,
-        completed: *mut c_int,
-    ) -> c_int;
+    pub fn libusb_handle_events_completed(context: *mut libusb_context, completed: *mut c_int) -> c_int;
+    pub fn libusb_handle_events_timeout_completed(context: *mut libusb_context, tv: *const timeval, completed: *mut c_int) -> c_int;
     pub fn libusb_handle_events_locked(context: *mut libusb_context, tv: *const timeval) -> c_int;
 
     pub fn libusb_try_lock_events(context: *mut libusb_context) -> c_int;
@@ -421,30 +302,10 @@ extern "C" {
     pub fn libusb_pollfds_handle_timeouts(context: *mut libusb_context) -> c_int;
     pub fn libusb_get_next_timeout(context: *mut libusb_context, tv: *mut timeval) -> c_int;
     pub fn libusb_get_pollfds(context: *mut libusb_context) -> *const *mut libusb_pollfd;
-    pub fn libusb_set_pollfd_notifiers(
-        context: *mut libusb_context,
-        added_cb: libusb_pollfd_added_cb,
-        removed_cb: libusb_pollfd_removed_cb,
-        user_data: *mut c_void,
-    );
+    pub fn libusb_set_pollfd_notifiers(context: *mut libusb_context, added_cb: libusb_pollfd_added_cb, removed_cb: libusb_pollfd_removed_cb, user_data: *mut c_void);
 }
 
 // defined as static inline in libusb.h
-pub unsafe fn libusb_get_string_descriptor(
-    dev_handle: *mut libusb_device_handle,
-    desc_index: u8,
-    langid: u16,
-    data: *mut c_uchar,
-    length: c_int,
-) -> c_int {
-    libusb_control_transfer(
-        dev_handle,
-        LIBUSB_ENDPOINT_IN,
-        LIBUSB_REQUEST_GET_DESCRIPTOR,
-        (LIBUSB_DT_STRING as u16) << 8 | desc_index as u16,
-        langid,
-        data,
-        length as u16,
-        1000,
-    )
+pub unsafe fn libusb_get_string_descriptor(dev_handle: *mut libusb_device_handle, desc_index: u8, langid: u16, data: *mut c_uchar, length: c_int) -> c_int {
+    libusb_control_transfer(dev_handle, LIBUSB_ENDPOINT_IN, LIBUSB_REQUEST_GET_DESCRIPTOR, (LIBUSB_DT_STRING as u16) << 8 | desc_index as u16, langid, data, length as u16, 1000)
 }

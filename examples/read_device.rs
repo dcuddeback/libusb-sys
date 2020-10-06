@@ -295,24 +295,22 @@ fn read_endpoint(
                                         e => println!("libusb_interrupt_transfer: {}", e),
                                     }
                                 }
-                                ::ffi::LIBUSB_TRANSFER_TYPE_BULK => {
-                                    match unsafe {
-                                        ::ffi::libusb_bulk_transfer(
-                                            handle,
-                                            endpoint.address as c_uchar,
-                                            (&vec[..]).as_ptr() as *mut c_uchar,
-                                            vec.capacity() as c_int,
-                                            &mut transferred,
-                                            timeout,
-                                        )
-                                    } {
-                                        0 => {
-                                            unsafe { vec.set_len(transferred as usize) };
-                                            println!(" - read: {:?}", vec);
-                                        }
-                                        e => println!("libusb_interrupt_transfer: {}", e),
+                                ::ffi::LIBUSB_TRANSFER_TYPE_BULK => match unsafe {
+                                    ::ffi::libusb_bulk_transfer(
+                                        handle,
+                                        endpoint.address as c_uchar,
+                                        (&vec[..]).as_ptr() as *mut c_uchar,
+                                        vec.capacity() as c_int,
+                                        &mut transferred,
+                                        timeout,
+                                    )
+                                } {
+                                    0 => {
+                                        unsafe { vec.set_len(transferred as usize) };
+                                        println!(" - read: {:?}", vec);
                                     }
-                                }
+                                    e => println!("libusb_interrupt_transfer: {}", e),
+                                },
                                 tt => println!(" - can't read endpoint with transfer type {}", tt),
                             }
                         }
