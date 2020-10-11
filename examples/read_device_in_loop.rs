@@ -8,7 +8,6 @@ use std::slice;
 use std::io::{Read,Cursor};
 use std::str::FromStr;
 use std::mem::MaybeUninit;
-use std::ptr::{copy, null};
 use std::ptr;
 
 #[derive(Debug)]
@@ -40,6 +39,12 @@ fn main() {
     },
     e => panic!("libusb_init: {}", e)
   };
+  // unsafe {
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_DEBUG);
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_INFO);
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_WARNING);
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_ERROR);
+  // }
 
   let mut device_list_uninit: MaybeUninit<*const *mut ffi::libusb_device> = MaybeUninit::uninit();
   let get_device_list_result = unsafe { ::ffi::libusb_get_device_list(context, device_list_uninit.as_mut_ptr()) };
