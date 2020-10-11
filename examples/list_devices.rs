@@ -1,9 +1,14 @@
 extern crate libusb_sys as ffi;
 extern crate libc;
 
-use libc::{c_int,c_uchar};
+use libc::{c_int, c_uchar, c_char};
 
 use std::{mem::{MaybeUninit}, slice, ptr};
+
+#[link(name = "libusb-1.0")]
+extern "C" fn call_libusb_log_cb(_context: *mut ::ffi::libusb_context, log_level: c_int, log_message: *const c_char) {
+    println!("USB_CallBack - {:?} : {:?}", log_level, log_message);
+}
 
 fn main() {
   let mut context_uninit: MaybeUninit<*mut ::ffi::libusb_context> = MaybeUninit::uninit();
@@ -13,6 +18,13 @@ fn main() {
     e => panic!("libusb_init: {}", get_error(e))
   };
   let context = unsafe { context_uninit.assume_init() };
+  unsafe {
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_DEBUG);
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_INFO);
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_WARNING);
+    ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_ERROR);
+  }
+  unsafe { ::ffi::libusb_set_log_cb(context, call_libusb_log_cb,::ffi::LIBUSB_LOG_LEVEL_DEBUG) };
   list_devices(context);
 
   unsafe { ::ffi::libusb_exit(context) };
@@ -50,10 +62,10 @@ fn display_device(dev: &*mut ::ffi::libusb_device) {
     _ => false
   };
   let descriptor = unsafe { descriptor_uninit.assume_init() };
-/*  if unsafe { ::ffi::libusb_open(*dev, &mut handle) } < 0 {
-    println!("Couldn't open device, some information will be missing");
+  if unsafe { ::ffi::libusb_open(*dev, &mut handle) } < 0 {
+    println!("Couldn't open device, some information will be missing"); // luck of OS permissions usually
     handle = ptr::null_mut();
-  }*/
+  }
 
   print!("Bus {:03} Device {:03}", bus, address);
 
@@ -86,7 +98,7 @@ fn display_device(dev: &*mut ::ffi::libusb_device) {
     }
   }
 
-  println!("");
+  println!("\n--------------------------------------------------");
 
   if has_descriptor {
     print_device_descriptor(handle, &descriptor);
