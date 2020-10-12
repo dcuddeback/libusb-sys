@@ -29,11 +29,17 @@ fn try_conan() -> bool {
         url: String::from("https://api.bintray.com/conan/conan/conan-transit"),
     };
 
-    if let None = remote_list.iter().find(|&remote| remote.url == conan_center.url) {
+    if let None = remote_list
+        .iter()
+        .find(|&remote| remote.url == conan_center.url)
+    {
         missing_remotes.push(conan_center);
     }
 
-    if let None = remote_list.iter().find(|&remote| remote.url == conan_transit.url) {
+    if let None = remote_list
+        .iter()
+        .find(|&remote| remote.url == conan_transit.url)
+    {
         missing_remotes.push(conan_transit);
     }
 
@@ -41,8 +47,13 @@ fn try_conan() -> bool {
         let mut msg = String::from("The required packages are not found in the current remotes.\n");
 
         for remote in missing_remotes {
-            msg.push_str(format!("note: execute the following command - \"conan remote add {} {}\"\n",
-                                 remote.name, remote.url).as_str());
+            msg.push_str(
+                format!(
+                    "note: execute the following command - \"conan remote add {} {}\"\n",
+                    remote.name, remote.url
+                )
+                .as_str(),
+            );
         }
         panic!(msg);
     }
