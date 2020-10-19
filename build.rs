@@ -1,5 +1,4 @@
 extern crate conan;
-extern crate pkg_config;
 
 use std::path;
 
@@ -11,7 +10,7 @@ fn main() {
     };
 
     if !is_conan_success {
-        pkg_config::find_library("libusb-1.0").unwrap();
+        panic!("Conan failed.");
     }
 }
 
