@@ -1,0 +1,6 @@
+[requires]
+ConanCargoWrapper/0.1@lasote/testing
+libusb/1.0.23
+
+[generators]
+ConanCargoWrapper

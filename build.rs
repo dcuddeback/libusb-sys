@@ -57,9 +57,15 @@ fn try_conan() -> bool {
         panic!(msg);
     }
 
+    let recipe = if cfg!(windows) {
+        "conanfile-win.txt"
+    } else {
+        "conanfile-unix.txt"
+    };
+
     let install_command = conan::InstallCommandBuilder::new()
         .build_policy(conan::BuildPolicy::Missing)
-        .recipe_path(path::Path::new("conanfile.txt"))
+        .recipe_path(path::Path::new(recipe))
         .build();
 
     if let Some(build_info) = install_command.generate() {
