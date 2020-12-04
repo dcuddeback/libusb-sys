@@ -207,6 +207,7 @@ pub struct libusb_pollfd {
 pub type libusb_transfer_cb_fn = extern "C" fn(*mut libusb_transfer);
 pub type libusb_pollfd_added_cb = extern "C" fn(c_int, c_short, *mut c_void);
 pub type libusb_pollfd_removed_cb = extern "C" fn(c_int, *mut c_void);
+pub type libusb_log_cb = extern "C" fn(*mut libusb_context, c_int, *const c_char);
 
 extern "C" {
     pub fn libusb_get_version() -> *const libusb_version;
@@ -217,7 +218,14 @@ extern "C" {
 
     pub fn libusb_init(context: *mut *mut libusb_context) -> c_int;
     pub fn libusb_exit(context: *mut libusb_context);
+
+    #[deprecated(note = "Please use the libusb_set_option() function instead")]
     pub fn libusb_set_debug(context: *mut libusb_context, level: c_int);
+
+    // todo: libusb_set_option() function uses varargs, but in rust it is still experimental,
+    // see documentation for c_variadic
+    pub fn libusb_set_option(context: *mut libusb_context, option: c_int, value: c_int) -> c_int;
+    pub fn libusb_set_log_cb(context: *mut libusb_context, cb: libusb_log_cb, mode: c_int) -> c_void;
 
     pub fn libusb_get_device_list(context: *mut libusb_context, list: *mut *const *mut libusb_device) -> ssize_t;
     pub fn libusb_free_device_list(list: *const *mut libusb_device, unref_devices: c_int);
