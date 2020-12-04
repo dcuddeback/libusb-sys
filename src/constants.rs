@@ -36,12 +36,21 @@ pub const LIBUSB_CAP_HAS_HOTPLUG: u32 = 0x0001;
 pub const LIBUSB_CAP_HAS_HID_ACCESS: u32 = 0x0100;
 pub const LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER: u32 = 0x0101;
 
-//// libusb_log_level
+// libusb_option
+pub const LIBUSB_OPTION_LOG_LEVEL: c_int = 0;
+pub const LIBUSB_OPTION_USE_USBDK: c_int = 1;
+pub const LIBUSB_OPTION_WEAK_AUTHORITY: c_int = 2;
+
+// libusb_log_level
 pub const LIBUSB_LOG_LEVEL_NONE: c_int = 0;
 pub const LIBUSB_LOG_LEVEL_ERROR: c_int = 1;
 pub const LIBUSB_LOG_LEVEL_WARNING: c_int = 2;
 pub const LIBUSB_LOG_LEVEL_INFO: c_int = 3;
 pub const LIBUSB_LOG_LEVEL_DEBUG: c_int = 4;
+
+// libusb_log_cb_mode
+pub const LIBUSB_LOG_CB_GLOBAL: c_int = 1 << 0;
+pub const LIBUSB_LOG_CB_CONTEXT: c_int = 1 << 1;
 
 // libusb_class_code
 pub const LIBUSB_CLASS_PER_INTERFACE: u8 = 0;
