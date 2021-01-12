@@ -8,6 +8,7 @@ use std::slice;
 use std::io::{Read,Cursor};
 use std::str::FromStr;
 use std::mem::MaybeUninit;
+use std::ptr;
 
 #[derive(Debug)]
 struct Endpoint {
@@ -25,71 +26,89 @@ fn main() {
     return;
   }
 
+  println!("try parse <vendor-id>: {}", args[1]);
   let vid: u16 = FromStr::from_str(args[1].as_ref()).unwrap();
+  println!("try parse <product-id>: {}", args[2]);
   let pid: u16 = FromStr::from_str(args[2].as_ref()).unwrap();
 
   let mut context_uninit: MaybeUninit<*mut ffi::libusb_context> = MaybeUninit::uninit();
   let context: *mut ffi::libusb_context;
-
-  // let mut device_list: *const *mut ::ffi::libusb_device = unsafe { mem::uninitialized() };
-  let mut device_list_uninit: MaybeUninit<*const *mut ffi::libusb_device> = MaybeUninit::uninit();
-  let device_list: *const *mut ffi::libusb_device;
-
   match unsafe { ::ffi::libusb_init(context_uninit.as_mut_ptr()) } {
     0 => {
       context = unsafe { context_uninit.assume_init() }
     },
     e => panic!("libusb_init: {}", e)
   };
+  // unsafe {
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_DEBUG);
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_INFO);
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_WARNING);
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_ERROR);
+  // }
 
-  let handle = unsafe { ::ffi::libusb_open_device_with_vid_pid(context, vid, pid) };
+  let mut device_list_uninit: MaybeUninit<*const *mut ffi::libusb_device> = MaybeUninit::uninit();
+  let get_device_list_result = unsafe { ::ffi::libusb_get_device_list(context, device_list_uninit.as_mut_ptr()) };
+  if get_device_list_result < 0 {
+    println!("libusb_get_device_list: {}", get_device_list_result);
+    return;
+  }
+  let device_list: *const *mut ffi::libusb_device = unsafe { device_list_uninit.assume_init() };
+  let devs = unsafe { slice::from_raw_parts(device_list, get_device_list_result as usize) };
 
-  if !handle.is_null() {
-    match unsafe { ::ffi::libusb_reset_device(handle) } {
-      0 => {
-        unsafe { ::ffi::libusb_set_auto_detach_kernel_driver(handle, 0) };
-
-        let device = unsafe { ::ffi::libusb_get_device(handle) };
-        unsafe { ::ffi::libusb_ref_device(device) };
-
-        if unsafe { ::ffi::libusb_get_device_list(context, device_list_uninit.as_mut_ptr()) } >= 0 {
-          device_list = unsafe { device_list_uninit.assume_init() };
-          print_device_tree(device);
-          println!("");
-          unsafe { ::ffi::libusb_free_device_list(device_list, 1) };
-        }
-
-        let languages = get_language_ids(handle);
-        println!("Supported languages: {:?}", languages);
-
-        let mut active_config_uninit = MaybeUninit::<c_int>::zeroed();
-        match unsafe { ::ffi::libusb_get_configuration(handle, active_config_uninit.as_mut_ptr()) } {
-          0 =>  {
-            let active_config = unsafe { active_config_uninit.assume_init() };
-            println!("Active configuration: {}", active_config)
-          },
-          e => println!("libusb_get_configuration: {}", e)
-        }
-        println!("");
-
-        match find_readable_endpoint(device, ::ffi::LIBUSB_TRANSFER_TYPE_INTERRUPT) {
-          Some(ep) => read_endpoint(handle, device, ep, ::ffi::LIBUSB_TRANSFER_TYPE_INTERRUPT),
-          None => println!("No readable interrupt endpoint")
-        }
-        println!("");
-
-        match find_readable_endpoint(device, ::ffi::LIBUSB_TRANSFER_TYPE_BULK) {
-          Some(ep) => read_endpoint(handle, device, ep, ::ffi::LIBUSB_TRANSFER_TYPE_BULK),
-          None => println!("No readable bulk endpoint")
-        }
-
-        unsafe { ::ffi::libusb_unref_device(device) };
-      },
-      e => println!("libusb_reset_device: {}", e)
+  for device in devs {
+    print_device_tree(*device);
+    println!("");
+    let mut handle: *mut ffi::libusb_device_handle = ptr::null_mut();
+    if unsafe { ffi::libusb_open(device.cast(), &mut handle) } < 0 {
+      println!("Couldn't open device [{:?}], some information will be missing", device);
+      continue;
     }
 
-    unsafe { ::ffi::libusb_close(handle) };
+    if !handle.is_null() {
+      match unsafe { ::ffi::libusb_reset_device(handle) } {
+        0 => {
+          unsafe { ::ffi::libusb_set_auto_detach_kernel_driver(handle, 0) };
+
+          let device = unsafe { ::ffi::libusb_get_device(handle) };
+          unsafe { ::ffi::libusb_ref_device(device) };
+
+          let languages = get_language_ids(handle);
+          println!("Supported languages: {:?}", languages);
+
+          let mut active_config_uninit = MaybeUninit::<c_int>::zeroed();
+          match unsafe { ::ffi::libusb_get_configuration(handle, active_config_uninit.as_mut_ptr()) } {
+            0 =>  {
+              let active_config = unsafe { active_config_uninit.assume_init() };
+              println!("Active configuration: {}", active_config)
+            },
+            e => println!("libusb_get_configuration: {}", e)
+          }
+          println!("");
+
+          match find_readable_endpoint(device, ::ffi::LIBUSB_TRANSFER_TYPE_INTERRUPT, vid, pid) {
+            Some(ep) => read_endpoint(handle, device, ep, ::ffi::LIBUSB_TRANSFER_TYPE_INTERRUPT),
+            None => println!("No readable interrupt endpoint")
+          }
+          println!("");
+
+          match find_readable_endpoint(device, ::ffi::LIBUSB_TRANSFER_TYPE_BULK, vid, pid) {
+            Some(ep) => read_endpoint(handle, device, ep, ::ffi::LIBUSB_TRANSFER_TYPE_BULK),
+            None => println!("No readable bulk endpoint")
+          }
+
+          unsafe { ::ffi::libusb_unref_device(device) };
+        },
+        e => println!("libusb_reset_device: {}", e)
+      }
+      unsafe { ::ffi::libusb_close(handle) };
+    } else {
+      println!("ERROR on opening by ffi::libusb_open(...)");
+    }
+
+
   }
+  unsafe { ::ffi::libusb_free_device_list(device_list, 1) };
+
 
   unsafe { ::ffi::libusb_exit(context) };
 }
@@ -157,22 +176,37 @@ fn get_language_ids(handle: *mut ::ffi::libusb_device_handle) -> Vec<u16> {
   languages
 }
 
-fn find_readable_endpoint(device: *mut ::ffi::libusb_device, transfer_type: u8) -> Option<Endpoint> {
+fn find_readable_endpoint(device: *mut ::ffi::libusb_device,
+                          transfer_type: u8,
+                          vid: u16,
+                          pid: u16) -> Option<Endpoint> {
+
   let mut descriptor_uninit: MaybeUninit<ffi::libusb_device_descriptor> = MaybeUninit::uninit();
 
   match unsafe { ::ffi::libusb_get_device_descriptor(device, descriptor_uninit.as_mut_ptr()) } {
     0 => {
       let device_descriptor: ffi::libusb_device_descriptor = unsafe { descriptor_uninit.assume_init() };
 
-      for i in 0..device_descriptor.bNumConfigurations {
-        let configuration_config_ptr_uninit: MaybeUninit<*mut *const ffi::libusb_config_descriptor> = MaybeUninit::uninit();
+      println!("Check Device '{} : {}'", device_descriptor.idVendor, device_descriptor.idProduct);
+      if vid <= 0 && pid <= 0 && device_descriptor.idVendor != vid && device_descriptor.idProduct != pid {
+        // skip device
+        println!("Device '{:03} : {:03}' skipped, because doesn't equal to '{} : {}'",
+                 device_descriptor.idVendor, device_descriptor.idProduct, vid , pid);
+        return None;
+      }
 
+
+        for i in 0..device_descriptor.bNumConfigurations {
+
+        let configuration_config_ptr_uninit: MaybeUninit<*mut *const ffi::libusb_config_descriptor> = MaybeUninit::uninit();
         match unsafe { ::ffi::libusb_get_config_descriptor(device, i, *configuration_config_ptr_uninit.as_ptr()) } {
           0 => {
             let config_descriptor: *mut *const ffi::libusb_config_descriptor = unsafe { configuration_config_ptr_uninit.assume_init() };
 
-            let interfaces = unsafe { slice::from_raw_parts((*(*config_descriptor)).interface,
-                                                            (*(*config_descriptor)).bNumInterfaces as usize) };
+            let interfaces = unsafe {
+              slice::from_raw_parts((*(*config_descriptor)).interface,
+                                    (*(*config_descriptor)).bNumInterfaces as usize)
+            };
 
             for iface in interfaces {
               let settings = unsafe { slice::from_raw_parts(iface.altsetting, iface.num_altsetting as usize) };
@@ -195,6 +229,7 @@ fn find_readable_endpoint(device: *mut ::ffi::libusb_device, transfer_type: u8) 
                 }
               }
             }
+            unsafe { ffi::libusb_free_config_descriptor(*config_descriptor) };
           },
           e => println!("libusb_get_config_descriptor: {}", e)
         }

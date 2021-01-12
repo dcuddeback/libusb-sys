@@ -1,36 +1,46 @@
 extern crate libusb_sys as ffi;
 extern crate libc;
 
-use libc::{c_int,c_uchar};
+use libc::{c_int, c_uchar, c_char};
 
-use std::mem;
-use std::ptr;
-use std::slice;
+use std::{mem::{MaybeUninit}, slice, ptr};
+
+#[link(name = "libusb-1.0")]
+extern "C" fn call_libusb_log_cb(_context: *mut ::ffi::libusb_context, log_level: c_int, log_message: *const c_char) {
+    println!("USB_CallBack - {:?} : {:?}", log_level, log_message);
+}
 
 fn main() {
-  let mut context: *mut ::ffi::libusb_context = unsafe { mem::uninitialized() };
+  let mut context_uninit: MaybeUninit<*mut ::ffi::libusb_context> = MaybeUninit::uninit();
 
-  match unsafe { ::ffi::libusb_init(&mut context) } {
+  match unsafe { ::ffi::libusb_init(context_uninit.as_mut_ptr()) } {
     0 => (),
     e => panic!("libusb_init: {}", get_error(e))
   };
-
+  let context = unsafe { context_uninit.assume_init() };
+  unsafe {
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_DEBUG);
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_INFO);
+    // ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_WARNING);
+    ::ffi::libusb_set_debug(context, ::ffi::LIBUSB_LOG_LEVEL_ERROR);
+  }
+  unsafe { ::ffi::libusb_set_log_cb(context, call_libusb_log_cb,::ffi::LIBUSB_LOG_LEVEL_DEBUG) };
   list_devices(context);
 
   unsafe { ::ffi::libusb_exit(context) };
 }
 
 fn list_devices(context: *mut ::ffi::libusb_context) {
-  let mut device_list: *const *mut ::ffi::libusb_device = unsafe { mem::uninitialized() };
+  let mut device_list_uninit: MaybeUninit<*const *mut ffi::libusb_device> = MaybeUninit::uninit();
 
-  let len = unsafe { ::ffi::libusb_get_device_list(context, &mut device_list) };
+  let get_device_list_result = unsafe { ::ffi::libusb_get_device_list(context, device_list_uninit.as_mut_ptr()) };
 
-  if len < 0 {
-    println!("libusb_get_device_list: {}", get_error(len as c_int));
+  if get_device_list_result < 0 {
+    println!("libusb_get_device_list: {}", get_error(get_device_list_result as c_int));
     return;
   }
-
-  let devs = unsafe { slice::from_raw_parts(device_list, len as usize) };
+  let device_list: *const *mut ffi::libusb_device = unsafe { device_list_uninit.assume_init() };
+  let devs = unsafe { slice::from_raw_parts(device_list, get_device_list_result as usize) };
 
   for dev in devs {
     display_device(dev);
@@ -40,20 +50,20 @@ fn list_devices(context: *mut ::ffi::libusb_context) {
 }
 
 fn display_device(dev: &*mut ::ffi::libusb_device) {
-  let mut descriptor: ::ffi::libusb_device_descriptor = unsafe { mem::uninitialized() };
+  let mut descriptor_uninit: MaybeUninit<::ffi::libusb_device_descriptor> = MaybeUninit::uninit();
   let mut handle: *mut ::ffi::libusb_device_handle = ptr::null_mut();
 
   let bus = unsafe { ::ffi::libusb_get_bus_number(*dev) };
   let address = unsafe { ::ffi::libusb_get_device_address(*dev) };
   let speed = unsafe { ::ffi::libusb_get_device_speed(*dev) };
 
-  let has_descriptor = match unsafe { ::ffi::libusb_get_device_descriptor(*dev, &mut descriptor) } {
+  let has_descriptor = match unsafe { ::ffi::libusb_get_device_descriptor(*dev, descriptor_uninit.as_mut_ptr()) } {
     0 => true,
     _ => false
   };
-
+  let descriptor = unsafe { descriptor_uninit.assume_init() };
   if unsafe { ::ffi::libusb_open(*dev, &mut handle) } < 0 {
-    println!("Couldn't open device, some information will be missing");
+    println!("Couldn't open device, some information will be missing"); // luck of OS permissions usually
     handle = ptr::null_mut();
   }
 
@@ -63,7 +73,7 @@ fn display_device(dev: &*mut ::ffi::libusb_device) {
     print!(" ID {:04x}:{:04x}", descriptor.idVendor, descriptor.idProduct);
   }
 
-  print!(" {}", get_device_speed(speed));
+  print!(", Speed : {}", get_device_speed(speed));
 
   if has_descriptor {
     if descriptor.iManufacturer > 0 {
@@ -88,16 +98,17 @@ fn display_device(dev: &*mut ::ffi::libusb_device) {
     }
   }
 
-  println!("");
+  println!("\n--------------------------------------------------");
 
   if has_descriptor {
     print_device_descriptor(handle, &descriptor);
 
     for i in 0..descriptor.bNumConfigurations {
-      let mut descriptor: *const ::ffi::libusb_config_descriptor = unsafe { mem::uninitialized() };
+      let mut descriptor_uninit: MaybeUninit<*const ::ffi::libusb_config_descriptor> = MaybeUninit::uninit();
 
-      match unsafe { ::ffi::libusb_get_config_descriptor(*dev, i, &mut descriptor) } {
+      match unsafe { ::ffi::libusb_get_config_descriptor(*dev, i, descriptor_uninit.as_mut_ptr()) } {
         0 => {
+          let descriptor = unsafe { descriptor_uninit.assume_init() };
           let config = unsafe { &*descriptor };
           let interfaces = unsafe { slice::from_raw_parts(config.interface, config.bNumInterfaces as usize) };
 
@@ -223,6 +234,7 @@ fn get_error(err: c_int) -> &'static str {
 
 fn get_device_speed(speed: c_int) -> &'static str {
   match speed {
+    ::ffi::LIBUSB_SPEED_SUPER_PLUS  => "10000 Mbps",
     ::ffi::LIBUSB_SPEED_SUPER       => "5000 Mbps",
     ::ffi::LIBUSB_SPEED_HIGH        => " 480 Mbps",
     ::ffi::LIBUSB_SPEED_FULL        => "  12 Mbps",
