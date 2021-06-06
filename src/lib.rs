@@ -32,6 +32,17 @@ pub struct libusb_version {
 
 #[allow(non_snake_case)]
 #[repr(C)]
+pub struct libusb_dfu_func_descriptor {
+    pub bLength: u8,
+    pub bDescriptorType: u8,
+    pub bmAttributes: u8,
+    pub wDetachTimeOut: u16,
+    pub wTransferSize: u16,
+    pub bcdDFUVersion: u16,
+}
+
+#[allow(non_snake_case)]
+#[repr(C)]
 pub struct libusb_device_descriptor {
     pub bLength: u8,
     pub bDescriptorType: u8,
@@ -283,6 +294,7 @@ pub const LIBUSB_DT_ENDPOINT:              u8 = 0x05;
 pub const LIBUSB_DT_BOS:                   u8 = 0x0F;
 pub const LIBUSB_DT_DEVICE_CAPABILITY:     u8 = 0x10;
 pub const LIBUSB_DT_HID:                   u8 = 0x21;
+pub const LIBUSB_DT_DFU:                   u8 = 0x21;
 pub const LIBUSB_DT_REPORT:                u8 = 0x22;
 pub const LIBUSB_DT_PHYSICAL:              u8 = 0x23;
 pub const LIBUSB_DT_HUB:                   u8 = 0x29;
@@ -382,6 +394,7 @@ extern "C" {
     pub fn libusb_ref_device(dev: *mut libusb_device) -> *mut libusb_device;
     pub fn libusb_unref_device(dev: *mut libusb_device);
 
+    pub fn libusb_get_descriptor(dev_handle: *mut libusb_device_handle, desc_type: u8, desc_index: u8, data: *mut c_uchar, length: c_int) -> c_int;
     pub fn libusb_get_device_descriptor(dev: *const libusb_device, desc: *mut libusb_device_descriptor) -> c_int;
     pub fn libusb_get_config_descriptor(dev: *const libusb_device, index: u8, config: *mut *const libusb_config_descriptor) -> c_int;
     pub fn libusb_get_active_config_descriptor(dev: *const libusb_device, config: *mut *const libusb_config_descriptor) -> c_int;
