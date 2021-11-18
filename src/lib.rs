@@ -126,6 +126,7 @@ pub struct libusb_bos_dev_capability_descriptor {
     pub bLength: u8,
     pub bDescriptorType: u8,
     pub bDevCapabilityType: u8,
+    pub dev_capability_data: *const *const u8,
 }
 
 #[allow(non_snake_case)]
@@ -135,6 +136,7 @@ pub struct libusb_bos_descriptor {
     pub bDescriptorType: u8,
     pub wTotalLength: u16,
     pub bNumDeviceCaps: u8,
+    pub dev_capability: *const *const libusb_bos_dev_capability_descriptor,
 }
 
 #[allow(non_snake_case)]
@@ -289,6 +291,11 @@ pub const LIBUSB_DT_HUB:                   u8 = 0x29;
 pub const LIBUSB_DT_SUPERSPEED_HUB:        u8 = 0x2A;
 pub const LIBUSB_DT_SS_ENDPOINT_COMPANION: u8 = 0x30;
 
+// libusb_bos_type
+pub const LIBUSB_BT_WIRELESS_USB_DEVICE_CAPABILITY: u8 = 0x01;  /** Wireless USB device capability */
+pub const LIBUSB_BT_USB_2_0_EXTENSION:              u8 = 0x02;  /** USB 2.0 extensions */
+pub const LIBUSB_BT_SS_USB_DEVICE_CAPABILITY:       u8 = 0x03;  /** SuperSpeed USB device capability */
+pub const LIBUSB_BT_CONTAINER_ID:                   u8 = 0x04;  /** Container ID type */
 
 // libusb_endpoint_direction
 pub const LIBUSB_ENDPOINT_ADDRESS_MASK: u8 = 0x0F;
